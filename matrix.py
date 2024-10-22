@@ -9,9 +9,11 @@ class App(QWidget):
         self.title = 'Hessian Matrix'
         self.left = 0
         self.top = 0
-        self.width = 700
+        self.width = 1000
         self.height = 700
 
+        self.today = datetime.today().strftime('%Y-%m-%d')
+        
         ## tasks
         self.tasks = 0
 
@@ -36,8 +38,8 @@ class App(QWidget):
         self.tableWidget = QTableWidget()
         
         ## status, date open closed, comments, id
-        self.tableWidget.setColumnCount(7)
-        self.tableWidget.setHorizontalHeaderLabels(("ID;Status (open/closed);Date Closed;Date Opened;Urgency (0 .. 10);Impact (0 .. 10);Comments").split(";"))
+        self.tableWidget.setColumnCount(8)
+        self.tableWidget.setHorizontalHeaderLabels(("ID;Issue;Status (open/closed);Date Closed;Date Opened;Urgency (0 .. 10);Impact (0 .. 10);Comments").split(";"))
         
         # number of rows should be dependent on the no. of tasks
         self.tableWidget.setRowCount(self.tasks)
@@ -52,7 +54,20 @@ class App(QWidget):
         self.tableWidget.insertRow(rowPos)
         
         # ID can be set to row pos
-        self.tableWidget.setItem(rowPos, 0, QTableWidgetItem(str(rowPos)))
+        self.tableWidget.setItem(rowPos, 0, QTableWidgetItem(str(rowPos + 1)))
+
+        issueList = QListWidget()
+
+        addSubIssueButton = QPushButton("Add Sub-Issue")
+        addSubIssueButton.clicked.connect(lambda: self.addSubIssue(issueList))
+
+        issueLayout = QVBoxLayout()
+        issueLayout.addWidget(issueList)
+        issueLayout.addWidget(addSubIssueButton)
+
+        issueWidget = QWidget()
+        issueWidget.setLayout(issueLayout)
+        self.tableWidget.setCellWidget(rowPos, 1, issueWidget)
 
         # checkbox init
         cb = QCheckBox()
@@ -60,17 +75,29 @@ class App(QWidget):
         cb.setChecked(False)
         cb.stateChanged.connect(lambda state, row = rowPos: self.updateStatus(cb, row))
         
-        # Status
-        self.tableWidget.setItem
+        # unedited values
+        self.tableWidget.setCellWidget(rowPos, 2, cb) # status
+        self.tableWidget.setItem(rowPos, 3, QTableWidgetItem("N/A"))
+        self.tableWidget.setItem(rowPos, 4, QTableWidgetItem(self.today))
+        self.tableWidget.setItem(rowPos, 5, QTableWidgetItem("0"))
+        self.tableWidget.setItem(rowPos, 6, QTableWidgetItem("0"))
+        self.tableWidget.setItem(rowPos, 7, QTableWidgetItem(""))
+
+        self.tableWidget.resizeRowsToContents()
+
+    def addSubIssue(self, issueList):
+        subIssue, ok = QInputDialog.getText(self, "Add Sub-Issue", "Enter sub-issue: ")
+
+        if ok and subIssue:
+            issueList.addItem(subIssue)
 
     def updateStatus(self, cb, row):
-        today = datetime.today().strftime('%Y-%m-%d')
         if cb.isChecked():
             cb.setText("Closed")
-            self.tableWidget.setItem(row, 2, QTableWidgetItem("N/A")) # sets date closed to N/a while not closed
+            self.tableWidget.setItem(row, 3, QTableWidgetItem(self.today)) # sets date closed to N/a while not closed
         else:
             cb.setText("Open")
-            self.tableWidget.setItem(row, 2, QTableWidgetItem(today)) 
+            self.tableWidget.setItem(row, 3, QTableWidgetItem("N/A")) 
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
